@@ -4,56 +4,144 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BLACKOUT</title>
+
   <style>
-    html, body { height: 100%; margin: 0; font-family: system-ui, Arial, sans-serif; }
-    .screen { height: 100%; display: grid; place-items: center; background: #0b0b0b; color: #eaeaea; }
-    .card { width: min(520px, 92vw); text-align: center; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      font-family: system-ui, -apple-system, Arial, sans-serif;
+    }
+
+    .screen {
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    /* START SCREEN */
+    #start {
+      background: #0b0b0b;
+      color: #eaeaea;
+      text-align: center;
+    }
+
+    #start h1 {
+      margin-bottom: 12px;
+      letter-spacing: 4px;
+    }
+
+    #start p {
+      opacity: .8;
+      line-height: 1.4;
+    }
+
     button {
-      padding: 14px 18px; border: 0; border-radius: 14px;
-      font-size: 16px; cursor: pointer;
+      margin-top: 18px;
+      padding: 14px 22px;
+      font-size: 16px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
     }
-    .hint { opacity: .7; font-size: 13px; margin-top: 10px; }
-    .blackout { background: #000; position: relative; }
-    /* Timer: visibile ma discreto */
+
+    .hint {
+      margin-top: 12px;
+      font-size: 13px;
+      opacity: .6;
+    }
+
+    /* BLACKOUT */
+    #blackout {
+      background: #000;
+      color: #39ff14;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* TIMER CENTRALE FLUORESCENTE */
     .timer {
-      position: absolute; top: 16px; right: 16px;
-      font-size: 14px; opacity: .65; letter-spacing: .5px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 68px;
+      font-weight: 700;
+      letter-spacing: 6px;
       user-select: none;
+
+      color: #39ff14;
+      text-shadow:
+        0 0 6px rgba(57,255,20,.65),
+        0 0 18px rgba(57,255,20,.55),
+        0 0 42px rgba(57,255,20,.35);
+
+      animation: neonFlicker 6s infinite;
     }
-    /* Testo uscita "quasi invisibile" */
+
+    @keyframes neonFlicker {
+      0%, 100% { opacity: .95; }
+      92% { opacity: .85; }
+      94% { opacity: .65; }
+      96% { opacity: .9; }
+      98% { opacity: .75; }
+    }
+
     .exit {
-      position: absolute; bottom: 16px; left: 16px;
-      font-size: 12px; opacity: .18; user-select: none;
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      font-size: 12px;
+      opacity: .18;
+      user-select: none;
+      color: #aaa;
     }
-    .end { background: #fff; color: #111; }
-    .end p { font-size: 18px; margin: 0; }
-    .end .small { margin-top: 10px; font-size: 12px; opacity: .65; }
+
+    /* END */
+    #end {
+      background: #fff;
+      color: #111;
+      text-align: center;
+    }
+
+    #end p {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    #end .small {
+      margin-top: 10px;
+      font-size: 12px;
+      opacity: .6;
+    }
   </style>
 </head>
+
 <body>
 
+  <!-- START -->
   <div id="start" class="screen">
-    <div class="card">
-      <h1 style="margin:0 0 10px;">BLACKOUT</h1>
-      <div style="opacity:.8; line-height:1.4;">
-        Esperimento proibito. Accesso volontario.<br>
-        Durata variabile: 6–14 minuti.<br>
-        Timer + respiro di fondo.
-      </div>
-      <div style="margin:18px 0;">
-        <button id="btnStart">INIZIA</button>
-      </div>
+    <div>
+      <h1>BLACKOUT</h1>
+      <p>
+        Esperimento proibito.<br>
+        Accesso volontario.<br>
+        Durata variabile.
+      </p>
+      <button id="btnStart">INIZIA</button>
       <div class="hint">Questo non è un errore. Quando inizi, non acceleri.</div>
     </div>
   </div>
 
-  <div id="blackout" class="screen blackout" style="display:none;">
+  <!-- BLACKOUT -->
+  <div id="blackout" class="screen" style="display:none;">
     <div class="timer" id="timer">--:--</div>
     <div class="exit">Uscire adesso = esperienza incompleta</div>
   </div>
 
-  <div id="end" class="screen end" style="display:none;">
-    <div class="card">
+  <!-- END -->
+  <div id="end" class="screen" style="display:none;">
+    <div>
       <p><strong>Ora sai quanto rumore c’era.</strong></p>
       <div class="small">Fine.</div>
     </div>
@@ -61,136 +149,115 @@
 
 <script>
 (() => {
-  const startEl = document.getElementById('start');
-  const blackoutEl = document.getElementById('blackout');
-  const endEl = document.getElementById('end');
-  const timerEl = document.getElementById('timer');
-  const btnStart = document.getElementById('btnStart');
 
-  let audioCtx, gainNode, breatheOsc, noiseNode, noiseGain;
+  const startEl = document.getElementById("start");
+  const blackoutEl = document.getElementById("blackout");
+  const endEl = document.getElementById("end");
+  const timerEl = document.getElementById("timer");
+  const btnStart = document.getElementById("btnStart");
+
+  let audioCtx, noiseNode, noiseGain, masterGain;
   let intervalId, timeoutId;
 
-  function pad(n){ return String(n).padStart(2,'0'); }
+  function pad(n) {
+    return String(n).padStart(2, "0");
+  }
 
-  // Respiro "morbido" via WebAudio: rumore + filtro + volume che sale/scende lentamente
-  function startBreathAudio() {
+  /* AUDIO – RESPIRO */
+  function startBreath() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // gain master
-    gainNode = audioCtx.createGain();
-    gainNode.gain.value = 0.0; // parte in silenzio, poi fade-in
-    gainNode.connect(audioCtx.destination);
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
 
-    // Rumore bianco
-    const bufferSize = 2 * audioCtx.sampleRate;
-    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
 
     noiseNode = audioCtx.createBufferSource();
-    noiseNode.buffer = noiseBuffer;
+    noiseNode.buffer = buffer;
     noiseNode.loop = true;
 
-    // filtro per renderlo "respiro", non fruscio
-    const bandpass = audioCtx.createBiquadFilter();
-    bandpass.type = "bandpass";
-    bandpass.frequency.value = 500;
-    bandpass.Q.value = 0.9;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 500;
+    filter.Q.value = 1;
 
-    // gain per modulare il "respiro"
     noiseGain = audioCtx.createGain();
-    noiseGain.gain.value = 0.0;
+    noiseGain.gain.value = 0;
 
-    noiseNode.connect(bandpass);
-    bandpass.connect(noiseGain);
-    noiseGain.connect(gainNode);
+    noiseNode.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(masterGain);
 
     noiseNode.start();
 
-    // fade-in master
-    gainNode.gain.setValueAtTime(0.0, audioCtx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 2.0);
+    masterGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 2);
 
-    // Ciclo respiro: 4s inspiro, 1s pausa, 6s espiro (puoi cambiare)
-    const inhale = 4.0, hold = 1.0, exhale = 6.0;
-    function scheduleBreath(t0){
-      // Inspiro (sale)
-      noiseGain.gain.setValueAtTime(0.02, t0);
-      noiseGain.gain.linearRampToValueAtTime(0.12, t0 + inhale);
-      // Pausa
-      noiseGain.gain.setValueAtTime(0.12, t0 + inhale);
-      noiseGain.gain.linearRampToValueAtTime(0.11, t0 + inhale + hold);
-      // Espiro (scende)
-      noiseGain.gain.setValueAtTime(0.11, t0 + inhale + hold);
-      noiseGain.gain.linearRampToValueAtTime(0.02, t0 + inhale + hold + exhale);
-      return t0 + inhale + hold + exhale;
-    }
-
+    const inhale = 4, hold = 1, exhale = 6;
     let t = audioCtx.currentTime;
-    // pre-programmo un po' di cicli avanti per fluidità
-    for (let i=0; i<60; i++) t = scheduleBreath(t);
-  }
 
-  function stopAudio() {
-    try {
-      if (gainNode && audioCtx) {
-        gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.0, audioCtx.currentTime + 1.2);
-      }
-      setTimeout(() => {
-        try { noiseNode && noiseNode.stop(); } catch(e){}
-        try { audioCtx && audioCtx.close(); } catch(e){}
-      }, 1300);
-    } catch(e){}
-  }
-
-  function runBlackout() {
-    // Durata random: 6–14 minuti
-    const totalSec = Math.floor((6*60) + Math.random() * (8*60 + 1));
-    const startTs = Date.now();
-
-    // timer update
-    function tick() {
-      const elapsed = Math.floor((Date.now() - startTs) / 1000);
-      const left = Math.max(0, totalSec - elapsed);
-      const m = Math.floor(left / 60);
-      const s = left % 60;
-      timerEl.textContent = `${pad(m)}:${pad(s)}`;
+    for (let i = 0; i < 60; i++) {
+      noiseGain.gain.setValueAtTime(0.02, t);
+      noiseGain.gain.linearRampToValueAtTime(0.12, t + inhale);
+      noiseGain.gain.setValueAtTime(0.12, t + inhale + hold);
+      noiseGain.gain.linearRampToValueAtTime(0.02, t + inhale + hold + exhale);
+      t += inhale + hold + exhale;
     }
+  }
+
+  function stopBreath() {
+    if (!audioCtx) return;
+    masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.2);
+    setTimeout(() => {
+      audioCtx.close();
+    }, 1300);
+  }
+
+  /* BLACKOUT TIMER */
+  function runBlackout() {
+    const totalSec = Math.floor(6 * 60 + Math.random() * (8 * 60));
+    const startTime = Date.now();
+
+    function tick() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const left = Math.max(0, totalSec - elapsed);
+      timerEl.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`;
+    }
+
     tick();
     intervalId = setInterval(tick, 250);
 
     timeoutId = setTimeout(() => {
       clearInterval(intervalId);
-      stopAudio();
+      stopBreath();
       blackoutEl.style.display = "none";
       endEl.style.display = "grid";
-      // “token scaduto” (demo): blocco back/refresh soft
       history.pushState(null, "", "#done");
     }, totalSec * 1000);
   }
 
-  btnStart.addEventListener('click', async () => {
-    // start audio after user gesture (required)
+  btnStart.addEventListener("click", () => {
     startEl.style.display = "none";
     blackoutEl.style.display = "grid";
-
-    // piccola scritta iniziale (opzionale): “Questo non è un errore”
-    // Se la vuoi, te la metto come overlay per 2 secondi.
-
-    startBreathAudio();
+    startBreath();
     runBlackout();
   });
 
-  // opzionale: evitare uscita accidentale
   window.addEventListener("beforeunload", (e) => {
     if (blackoutEl.style.display !== "none") {
       e.preventDefault();
       e.returnValue = "";
     }
   });
+
 })();
 </script>
+
 </body>
 </html>
