@@ -25,16 +25,8 @@
       color: #eaeaea;
       text-align: center;
     }
-
-    #start h1 {
-      margin-bottom: 12px;
-      letter-spacing: 4px;
-    }
-
-    #start p {
-      opacity: .8;
-      line-height: 1.4;
-    }
+    #start h1 { margin-bottom: 12px; letter-spacing: 4px; }
+    #start p { opacity: .8; line-height: 1.4; }
 
     button {
       margin-top: 18px;
@@ -44,12 +36,7 @@
       border: none;
       cursor: pointer;
     }
-
-    .hint {
-      margin-top: 12px;
-      font-size: 13px;
-      opacity: .6;
-    }
+    .hint { margin-top: 12px; font-size: 13px; opacity: .6; }
 
     /* BLACKOUT */
     #blackout {
@@ -59,7 +46,7 @@
       overflow: hidden;
     }
 
-    /* TIMER CENTRALE FLUORESCENTE */
+    /* TIMER CENTRALE FLUORESCENTE CHE RESPIRA */
     .timer {
       position: absolute;
       top: 50%;
@@ -69,22 +56,32 @@
       font-weight: 700;
       letter-spacing: 6px;
       user-select: none;
-
       color: #39ff14;
-      text-shadow:
-        0 0 6px rgba(57,255,20,.65),
-        0 0 18px rgba(57,255,20,.55),
-        0 0 42px rgba(57,255,20,.35);
-
-      animation: neonFlicker 6s infinite;
+      animation: breatheNeon 11s ease-in-out infinite;
     }
 
-    @keyframes neonFlicker {
-      0%, 100% { opacity: .95; }
-      92% { opacity: .85; }
-      94% { opacity: .65; }
-      96% { opacity: .9; }
-      98% { opacity: .75; }
+    @keyframes breatheNeon {
+      0% {
+        opacity: 0.75;
+        text-shadow:
+          0 0 6px rgba(57,255,20,.35),
+          0 0 18px rgba(57,255,20,.25),
+          0 0 32px rgba(57,255,20,.15);
+      }
+      40% {
+        opacity: 1;
+        text-shadow:
+          0 0 10px rgba(57,255,20,.85),
+          0 0 26px rgba(57,255,20,.75),
+          0 0 60px rgba(57,255,20,.55);
+      }
+      100% {
+        opacity: 0.75;
+        text-shadow:
+          0 0 6px rgba(57,255,20,.35),
+          0 0 18px rgba(57,255,20,.25),
+          0 0 32px rgba(57,255,20,.15);
+      }
     }
 
     .exit {
@@ -103,17 +100,8 @@
       color: #111;
       text-align: center;
     }
-
-    #end p {
-      font-size: 20px;
-      margin: 0;
-    }
-
-    #end .small {
-      margin-top: 10px;
-      font-size: 12px;
-      opacity: .6;
-    }
+    #end p { font-size: 20px; margin: 0; }
+    #end .small { margin-top: 10px; font-size: 12px; opacity: .6; }
   </style>
 </head>
 
@@ -149,7 +137,6 @@
 
 <script>
 (() => {
-
   const startEl = document.getElementById("start");
   const blackoutEl = document.getElementById("blackout");
   const endEl = document.getElementById("end");
@@ -159,9 +146,7 @@
   let audioCtx, noiseNode, noiseGain, masterGain;
   let intervalId, timeoutId;
 
-  function pad(n) {
-    return String(n).padStart(2, "0");
-  }
+  const pad = n => String(n).padStart(2, "0");
 
   /* AUDIO – RESPIRO */
   function startBreath() {
@@ -174,10 +159,7 @@
     const bufferSize = audioCtx.sampleRate * 2;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
-
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
     noiseNode = audioCtx.createBufferSource();
     noiseNode.buffer = buffer;
@@ -196,12 +178,10 @@
     noiseGain.connect(masterGain);
 
     noiseNode.start();
-
     masterGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 2);
 
     const inhale = 4, hold = 1, exhale = 6;
     let t = audioCtx.currentTime;
-
     for (let i = 0; i < 60; i++) {
       noiseGain.gain.setValueAtTime(0.02, t);
       noiseGain.gain.linearRampToValueAtTime(0.12, t + inhale);
@@ -214,14 +194,12 @@
   function stopBreath() {
     if (!audioCtx) return;
     masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.2);
-    setTimeout(() => {
-      audioCtx.close();
-    }, 1300);
+    setTimeout(() => audioCtx.close(), 1300);
   }
 
-  /* BLACKOUT TIMER */
+  /* TIMER BLACKOUT */
   function runBlackout() {
-    const totalSec = Math.floor(6 * 60 + Math.random() * (8 * 60));
+    const totalSec = Math.floor(6 * 60 + Math.random() * (8 * 60 + 1)); // 6–14 min
     const startTime = Date.now();
 
     function tick() {
@@ -255,7 +233,6 @@
       e.returnValue = "";
     }
   });
-
 })();
 </script>
 
